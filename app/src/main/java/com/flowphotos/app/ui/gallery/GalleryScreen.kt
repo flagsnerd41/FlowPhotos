@@ -1,8 +1,6 @@
 package com.flowphotos.app.ui.gallery
 
 import android.Manifest
-import android.graphics.RenderEffect as AndroidRenderEffect
-import android.graphics.Shader
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -45,10 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asComposeRenderEffect
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -63,12 +58,16 @@ import com.flowphotos.app.ui.theme.FlowMuted
 import com.flowphotos.app.ui.theme.FlowPrimary
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 
-private val GlassFill = Color(0x7312121A)
 private val GlassBorder = Color(0x33FFFFFF)
 private val GlassHighlight = Color(0x18FFFFFF)
-private val TopGlassFill = Color(0x990C0C14)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -76,6 +75,7 @@ fun GalleryScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repository = remember { MediaRepository(context) }
+    val hazeState = rememberHazeState()
 
     val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         listOf(
@@ -110,58 +110,65 @@ fun GalleryScreen() {
             .fillMaxSize()
             .background(FlowBackground),
     ) {
-        when {
-            !permissionState.allPermissionsGranted -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "Allow access to your photos & videos",
-                            color = FlowMuted,
-                            modifier = Modifier.padding(bottom = 16.dp),
-                        )
-                        Button(onClick = { permissionState.launchMultiplePermissionRequest() }) {
-                            Text("Grant permission")
+        // Content is the haze source (what gets blurred under glass)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = hazeState),
+        ) {
+            when {
+                !permissionState.allPermissionsGranted -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "Allow access to your photos & videos",
+                                color = FlowMuted,
+                                modifier = Modifier.padding(bottom = 16.dp),
+                            )
+                            Button(onClick = { permissionState.launchMultiplePermissionRequest() }) {
+                                Text("Grant permission")
+                            }
                         }
                     }
                 }
-            }
 
-            loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(color = FlowPrimary)
+                loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(color = FlowPrimary)
+                    }
                 }
-            }
 
-            media.isEmpty() -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("No photos or videos found", color = FlowMuted)
+                media.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text("No photos or videos found", color = FlowMuted)
+                    }
                 }
-            }
 
-            else -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(minSize = 110.dp),
-                    contentPadding = PaddingValues(
-                        start = 8.dp,
-                        end = 8.dp,
-                        top = 108.dp,
-                        bottom = 110.dp,
-                    ),
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                    verticalArrangement = Arrangement.spacedBy(3.dp),
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-                    items(media, key = { it.id }) { item ->
-                        MediaThumb(item)
+                else -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 110.dp),
+                        contentPadding = PaddingValues(
+                            start = 8.dp,
+                            end = 8.dp,
+                            top = 108.dp,
+                            bottom = 110.dp,
+                        ),
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp),
+                        modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(media, key = { it.id }) { item ->
+                            MediaThumb(item)
+                        }
                     }
                 }
             }
@@ -169,78 +176,63 @@ fun GalleryScreen() {
 
         SoftGlassTopBar(
             title = "Library",
+            hazeState = hazeState,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
         SoftGlassBottomBar(
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
+            hazeState = hazeState,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
 }
 
-/** Real blur modifier — API 31+ only. */
-private fun Modifier.realBlur(radius: Float = 36f): Modifier {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        this.graphicsLayer {
-            renderEffect = AndroidRenderEffect
-                .createBlurEffect(radius, radius, Shader.TileMode.CLAMP)
-                .asComposeRenderEffect()
-        }
-    } else {
-        this
-    }
-}
+private val TopBarStyle = HazeStyle(
+    backgroundColor = Color(0xCC0C0C14),
+    tints = listOf(HazeTint(Color(0x6612121A))),
+    blurRadius = 24.dp,
+    noiseFactor = 0.0f,
+)
+
+private val BottomBarStyle = HazeStyle(
+    backgroundColor = Color(0xB312121A),
+    tints = listOf(HazeTint(Color(0x5512121A))),
+    blurRadius = 28.dp,
+    noiseFactor = 0.0f,
+)
 
 @Composable
 private fun SoftGlassTopBar(
     title: String,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxWidth()) {
-        // Blurred frosted layer (content under this gets blurred on API 31+)
-        Box(
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .hazeEffect(state = hazeState, style = TopBarStyle),
+    ) {
+        Row(
             modifier = Modifier
-                .matchParentSize()
-                .realBlur(40f)
-                .background(TopGlassFill),
-        )
-
-        Column(modifier = Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onBackground,
-                )
-
-                GlassPill(text = "Select")
-            }
-
-            // Soft edge fade under the bar
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(18.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(
-                                TopGlassFill.copy(alpha = 0.35f),
-                                Color.Transparent,
-                            ),
-                        ),
-                    ),
+                .fillMaxWidth()
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
             )
+
+            GlassPill(text = "Select", hazeState = hazeState)
         }
+
+        Spacer(modifier = Modifier.height(4.dp))
     }
 }
 
@@ -248,6 +240,7 @@ private fun SoftGlassTopBar(
 private fun SoftGlassBottomBar(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -256,52 +249,34 @@ private fun SoftGlassBottomBar(
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(20.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            FlowBackground.copy(alpha = 0.4f),
-                        ),
-                    ),
-                ),
-        )
-
-        Box(
+        Row(
             modifier = Modifier
                 .padding(bottom = 12.dp)
                 .clip(RoundedCornerShape(28.dp))
-                .realBlur(32f)
-                .background(GlassFill)
-                .border(1.dp, GlassBorder, RoundedCornerShape(28.dp)),
+                .hazeEffect(state = hazeState, style = BottomBarStyle)
+                .border(1.dp, GlassBorder, RoundedCornerShape(28.dp))
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                GlassNavItem(
-                    icon = Icons.Outlined.PhotoLibrary,
-                    label = "Library",
-                    selected = selectedIndex == 0,
-                    onClick = { onSelect(0) },
-                )
-                GlassNavItem(
-                    icon = Icons.Outlined.Collections,
-                    label = "Albums",
-                    selected = selectedIndex == 1,
-                    onClick = { onSelect(1) },
-                )
-                GlassNavItem(
-                    icon = Icons.Outlined.Search,
-                    label = "Search",
-                    selected = selectedIndex == 2,
-                    onClick = { onSelect(2) },
-                )
-            }
+            GlassNavItem(
+                icon = Icons.Outlined.PhotoLibrary,
+                label = "Library",
+                selected = selectedIndex == 0,
+                onClick = { onSelect(0) },
+            )
+            GlassNavItem(
+                icon = Icons.Outlined.Collections,
+                label = "Albums",
+                selected = selectedIndex == 1,
+                onClick = { onSelect(1) },
+            )
+            GlassNavItem(
+                icon = Icons.Outlined.Search,
+                label = "Search",
+                selected = selectedIndex == 2,
+                onClick = { onSelect(2) },
+            )
         }
     }
 }
@@ -339,7 +314,7 @@ private fun GlassNavItem(
 }
 
 @Composable
-private fun GlassPill(text: String) {
+private fun GlassPill(text: String, hazeState: HazeState) {
     Text(
         text = text,
         style = MaterialTheme.typography.labelLarge,
@@ -347,8 +322,7 @@ private fun GlassPill(text: String) {
         fontWeight = FontWeight.Medium,
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
-            .realBlur(24f)
-            .background(GlassFill)
+            .hazeEffect(state = hazeState, style = BottomBarStyle)
             .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
             .padding(horizontal = 14.dp, vertical = 8.dp),
     )
