@@ -4,17 +4,17 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Soft cream 8-point asterisk -->
+    <!-- Soft cream asterisk matching brand mark -->
     <path
-        android:fillColor="#C4B28A"
-        android:pathData="M51,30h6v48h-6z" />
+        android:fillColor="#C9B896"
+        android:pathData="M52.2,28.5h3.6v51h-3.6z" />
     <path
-        android:fillColor="#C4B28A"
-        android:pathData="M30,51h48v6h-48z" />
+        android:fillColor="#C9B896"
+        android:pathData="M28.5,52.2h51v3.6h-51z" />
     <path
-        android:fillColor="#C4B28A"
-        android:pathData="M37.2,33.5 L70.5,66.8 L66.3,71 L33,37.7 Z" />
+        android:fillColor="#C9B896"
+        android:pathData="M36.1,33.5l3.0,-2.6l32.4,37.6l-3.0,2.6z" />
     <path
-        android:fillColor="#C4B28A"
-        android:pathData="M70.5,33.5 L37.2,66.8 L33,62.6 L66.3,29.3 Z" />
+        android:fillColor="#C9B896"
+        android:pathData="M68.9,30.9l3.0,2.6l-32.4,37.6l-3.0,-2.6z" />
 </vector>
