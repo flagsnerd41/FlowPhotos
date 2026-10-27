@@ -1,6 +1,8 @@
 package com.flowphotos.app.ui.gallery
 
 import android.Manifest
+import android.graphics.RenderEffect as AndroidRenderEffect
+import android.graphics.Shader
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,7 +21,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -46,6 +47,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asComposeRenderEffect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -62,9 +65,10 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.launch
 
-private val GlassFill = Color(0x9912121A)
+private val GlassFill = Color(0x7312121A)
 private val GlassBorder = Color(0x33FFFFFF)
-private val GlassHighlight = Color(0x14FFFFFF)
+private val GlassHighlight = Color(0x18FFFFFF)
+private val TopGlassFill = Color(0x990C0C14)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -106,7 +110,6 @@ fun GalleryScreen() {
             .fillMaxSize()
             .background(FlowBackground),
     ) {
-        // Content scrolls under glass bars
         when {
             !permissionState.allPermissionsGranted -> {
                 Box(
@@ -150,7 +153,7 @@ fun GalleryScreen() {
                     contentPadding = PaddingValues(
                         start = 8.dp,
                         end = 8.dp,
-                        top = 100.dp,
+                        top = 108.dp,
                         bottom = 110.dp,
                     ),
                     horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -164,13 +167,11 @@ fun GalleryScreen() {
             }
         }
 
-        // Soft blur top glass
         SoftGlassTopBar(
             title = "Library",
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        // Soft blur bottom nav
         SoftGlassBottomBar(
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
@@ -179,61 +180,67 @@ fun GalleryScreen() {
     }
 }
 
+/** Real blur modifier — API 31+ only. */
+private fun Modifier.realBlur(radius: Float = 36f): Modifier {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        this.graphicsLayer {
+            renderEffect = AndroidRenderEffect
+                .createBlurEffect(radius, radius, Shader.TileMode.CLAMP)
+                .asComposeRenderEffect()
+        }
+    } else {
+        this
+    }
+}
+
 @Composable
 private fun SoftGlassTopBar(
     title: String,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
-        // Soft fade into content
+    Box(modifier = modifier.fillMaxWidth()) {
+        // Blurred frosted layer (content under this gets blurred on API 31+)
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(28.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            FlowBackground.copy(alpha = 0.92f),
-                            Color.Transparent,
-                        ),
-                    ),
-                ),
+                .matchParentSize()
+                .realBlur(40f)
+                .background(TopGlassFill),
         )
 
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 GlassPill(text = "Select")
             }
-        }
 
-        // Soft bottom edge blur fade
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(20.dp)
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            FlowBackground.copy(alpha = 0.55f),
-                            Color.Transparent,
+            // Soft edge fade under the bar
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(18.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                TopGlassFill.copy(alpha = 0.35f),
+                                Color.Transparent,
+                            ),
                         ),
                     ),
-                ),
-        )
+            )
+        }
     }
 }
 
@@ -249,49 +256,52 @@ private fun SoftGlassBottomBar(
             .navigationBarsPadding(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Soft top edge fade
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(24.dp)
+                .height(20.dp)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
                             Color.Transparent,
-                            FlowBackground.copy(alpha = 0.45f),
+                            FlowBackground.copy(alpha = 0.4f),
                         ),
                     ),
                 ),
         )
 
-        Row(
+        Box(
             modifier = Modifier
                 .padding(bottom = 12.dp)
                 .clip(RoundedCornerShape(28.dp))
+                .realBlur(32f)
                 .background(GlassFill)
-                .border(1.dp, GlassBorder, RoundedCornerShape(28.dp))
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .border(1.dp, GlassBorder, RoundedCornerShape(28.dp)),
         ) {
-            GlassNavItem(
-                icon = Icons.Outlined.PhotoLibrary,
-                label = "Library",
-                selected = selectedIndex == 0,
-                onClick = { onSelect(0) },
-            )
-            GlassNavItem(
-                icon = Icons.Outlined.Collections,
-                label = "Albums",
-                selected = selectedIndex == 1,
-                onClick = { onSelect(1) },
-            )
-            GlassNavItem(
-                icon = Icons.Outlined.Search,
-                label = "Search",
-                selected = selectedIndex == 2,
-                onClick = { onSelect(2) },
-            )
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GlassNavItem(
+                    icon = Icons.Outlined.PhotoLibrary,
+                    label = "Library",
+                    selected = selectedIndex == 0,
+                    onClick = { onSelect(0) },
+                )
+                GlassNavItem(
+                    icon = Icons.Outlined.Collections,
+                    label = "Albums",
+                    selected = selectedIndex == 1,
+                    onClick = { onSelect(1) },
+                )
+                GlassNavItem(
+                    icon = Icons.Outlined.Search,
+                    label = "Search",
+                    selected = selectedIndex == 2,
+                    onClick = { onSelect(2) },
+                )
+            }
         }
     }
 }
@@ -337,6 +347,7 @@ private fun GlassPill(text: String) {
         fontWeight = FontWeight.Medium,
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
+            .realBlur(24f)
             .background(GlassFill)
             .border(1.dp, GlassBorder, RoundedCornerShape(20.dp))
             .padding(horizontal = 14.dp, vertical = 8.dp),
