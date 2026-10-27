@@ -4,7 +4,17 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- Soft cream 8-point asterisk -->
     <path
-        android:fillColor="#6B8CFF"
-        android:pathData="M54,30c-13.2,0 -24,10.8 -24,24s10.8,24 24,24 24,-10.8 24,-24 -10.8,-24 -24,-24zM48,46h12v4h-12zM48,54h12v4h-12z" />
+        android:fillColor="#C4B28A"
+        android:pathData="M51,30h6v48h-6z" />
+    <path
+        android:fillColor="#C4B28A"
+        android:pathData="M30,51h48v6h-48z" />
+    <path
+        android:fillColor="#C4B28A"
+        android:pathData="M37.2,33.5 L70.5,66.8 L66.3,71 L33,37.7 Z" />
+    <path
+        android:fillColor="#C4B28A"
+        android:pathData="M70.5,33.5 L37.2,66.8 L33,62.6 L66.3,29.3 Z" />
 </vector>
