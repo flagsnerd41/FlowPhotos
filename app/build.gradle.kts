@@ -60,6 +60,9 @@ dependencies {
     // Media store / permissions
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 
+    // Real backdrop blur
+    implementation("dev.chrisbanes.haze:haze:1.7.3")
+
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
