@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.flowphotos.app"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.flowphotos.app"
@@ -54,14 +54,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.3")
 
-    // Image loading
     implementation("io.coil-kt:coil-compose:2.7.0")
-
-    // Media store / permissions
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
-
-    // Real backdrop blur
-    implementation("dev.chrisbanes.haze:haze:1.7.3")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
