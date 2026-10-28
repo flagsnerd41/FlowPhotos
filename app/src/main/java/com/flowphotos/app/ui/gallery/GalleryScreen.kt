@@ -186,7 +186,6 @@ fun GalleryScreen() {
         SoftGlassBottomBar(
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
-            hazeState = hazeState,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
@@ -285,7 +284,6 @@ private fun SoftGlassTopBar(
 private fun SoftGlassBottomBar(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
-    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     Column(
