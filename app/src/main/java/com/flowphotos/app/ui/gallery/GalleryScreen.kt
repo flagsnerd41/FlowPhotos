@@ -48,6 +48,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.viewinterop.AndroidView
+import android.app.Activity
+import android.content.Context
+import android.graphics.drawable.ColorDrawable
+import android.view.View
+import android.view.ViewGroup
+import eightbitlab.com.blurview.BlurView
+import eightbitlab.com.blurview.RenderEffectBlur
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -58,9 +66,6 @@ import com.flowphotos.app.ui.theme.FlowCard
 import com.flowphotos.app.ui.theme.FlowMuted
 import com.flowphotos.app.ui.theme.FlowPrimary
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.launch
 
@@ -76,7 +81,6 @@ fun GalleryScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repository = remember { MediaRepository(context) }
-    val hazeState = remember { HazeState() }
 
     val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         listOf(
@@ -150,7 +154,7 @@ fun GalleryScreen() {
 
             else -> {
                 Box(
-                    modifier = Modifier.fillMaxSize().hazeSource(state = hazeState),
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 110.dp),
@@ -172,12 +176,13 @@ fun GalleryScreen() {
             }
         }
 
+        LiveBlurOverlay(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(104.dp), radius = 22f, overlayColor = android.graphics.Color.argb(48, 12, 12, 20))
         SoftGlassTopBar(
             title = "Library",
-            hazeState = hazeState,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
+        LiveBlurOverlay(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(104.dp).navigationBarsPadding(), radius = 24f, overlayColor = android.graphics.Color.argb(55, 18, 18, 26))
         SoftGlassBottomBar(
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
@@ -187,18 +192,48 @@ fun GalleryScreen() {
     }
 }
 
+
+@Composable
+private fun LiveBlurOverlay(
+    modifier: Modifier = Modifier,
+    radius: Float,
+    overlayColor: Int,
+) {
+    val context = LocalContext.current
+    AndroidView(
+        modifier = modifier,
+        factory = { viewContext ->
+            BlurView(viewContext).apply {
+                setOverlayColor(overlayColor)
+                val activity = viewContext.findActivity()
+                val root = activity?.window?.decorView?.findViewById<ViewGroup>(android.R.id.content)
+                if (root != null) {
+                    setupWith(root)
+                        .setFrameClearDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+                        .setBlurAlgorithm(RenderEffectBlur(viewContext))
+                        .setBlurRadius(radius)
+                        .setBlurAutoUpdate(true)
+                }
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            }
+        },
+        update = { it.setOverlayColor(overlayColor) },
+    )
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is android.content.ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
 @Composable
 private fun SoftGlassTopBar(
     title: String,
-    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier.fillMaxWidth().hazeEffect(state = hazeState) {
-            backgroundColor = Color(0x1A0C0C14)
-            blurRadius = 48.dp
-            noiseFactor = 0.06f
-        },
+        modifier = modifier.fillMaxWidth(),
     ) {
         Box(
             modifier = Modifier
@@ -263,11 +298,7 @@ private fun SoftGlassBottomBar(
             modifier = Modifier
                 .padding(bottom = 12.dp)
                 .clip(RoundedCornerShape(28.dp))
-                .hazeEffect(state = hazeState) {
-                    backgroundColor = GlassFill
-                    blurRadius = 44.dp
-                    noiseFactor = 0.06f
-                }
+                
                 .border(1.dp, GlassBorder, RoundedCornerShape(28.dp)),
         ) {
             Row(

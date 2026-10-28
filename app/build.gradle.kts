@@ -55,7 +55,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.3")
 
     implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation("dev.chrisbanes.haze:haze:1.5.4")
+    implementation("com.github.Dimezis:BlurView:version-2.0.6")
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
