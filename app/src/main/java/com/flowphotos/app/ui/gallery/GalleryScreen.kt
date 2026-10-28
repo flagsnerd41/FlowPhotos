@@ -58,6 +58,7 @@ import eightbitlab.com.blurview.BlurView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.flowphotos.app.data.MediaItem
 import com.flowphotos.app.data.MediaRepository
 import com.flowphotos.app.ui.theme.FlowBackground
@@ -374,6 +375,16 @@ private fun GlassPill(text: String) {
 
 @Composable
 private fun MediaThumb(item: MediaItem) {
+    val context = LocalContext.current
+    // BlurView captures the gallery through a software canvas. Hardware-backed
+    // Coil bitmaps cannot be drawn into that canvas, so use software bitmaps here.
+    val imageRequest = remember(item.uri) {
+        ImageRequest.Builder(context)
+            .data(item.uri)
+            .allowHardware(false)
+            .build()
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -382,7 +393,7 @@ private fun MediaThumb(item: MediaItem) {
             .background(FlowCard),
     ) {
         AsyncImage(
-            model = item.uri,
+            model = imageRequest,
             contentDescription = item.displayName,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
