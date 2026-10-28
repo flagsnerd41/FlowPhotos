@@ -176,13 +176,13 @@ fun GalleryScreen() {
             }
         }
 
-        LiveBlurOverlay(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(104.dp), radius = 22f, overlayColor = android.graphics.Color.argb(48, 12, 12, 20))
+        LiveBlurOverlay(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(84.dp), radius = 12f, overlayColor = android.graphics.Color.argb(34, 12, 12, 20))
         SoftGlassTopBar(
             title = "Library",
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        LiveBlurOverlay(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(104.dp).navigationBarsPadding(), radius = 24f, overlayColor = android.graphics.Color.argb(55, 18, 18, 26))
+        LiveBlurOverlay(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(84.dp).navigationBarsPadding(), radius = 12f, overlayColor = android.graphics.Color.argb(38, 18, 18, 26))
         SoftGlassBottomBar(
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
@@ -239,9 +239,9 @@ private fun SoftGlassTopBar(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0x580C0C14),
-                            TopGlassFill,
-                            Color(0x140C0C14),
+                            Color(0x380C0C14),
+                            Color(0x220C0C14),
+                            Color.Transparent,
                         ),
                     ),
                 ),
@@ -288,7 +288,12 @@ private fun SoftGlassBottomBar(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding(),
+            .navigationBarsPadding()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, Color(0x240C0C14), Color(0x380C0C14)),
+                ),
+            ),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
