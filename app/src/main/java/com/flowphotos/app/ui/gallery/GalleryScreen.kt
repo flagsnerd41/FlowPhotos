@@ -55,7 +55,6 @@ import android.graphics.drawable.ColorDrawable
 import android.view.View
 import android.view.ViewGroup
 import eightbitlab.com.blurview.BlurView
-import eightbitlab.com.blurview.RenderEffectBlur
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -209,7 +208,6 @@ private fun LiveBlurOverlay(
                 if (root != null) {
                     setupWith(root)
                         .setFrameClearDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
-                        .setBlurAlgorithm(RenderEffectBlur(viewContext))
                         .setBlurRadius(radius)
                         .setBlurAutoUpdate(true)
                 }
