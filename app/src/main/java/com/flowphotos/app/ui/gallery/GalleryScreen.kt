@@ -43,26 +43,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.CompositingStrategy
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.viewinterop.AndroidView
-import android.app.Activity
-import android.content.Context
-import android.graphics.drawable.ColorDrawable
-import android.view.View
-import android.view.ViewGroup
-import eightbitlab.com.blurview.BlurView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import coil.request.ImageRequest
 import com.flowphotos.app.data.MediaItem
 import com.flowphotos.app.data.MediaRepository
 import com.flowphotos.app.ui.theme.FlowBackground
@@ -180,49 +168,26 @@ fun GalleryScreen() {
             }
         }
 
-        LiveBlurOverlay(
+        // Lightweight gradient glass: avoids capturing and re-blurring the entire gallery on every frame.
+        FadedGlassOverlay(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(116.dp)
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                .drawWithContent {
-                    drawContent()
-                    // Keep the blur strongest behind the status/title area, then fade it into the photos.
-                    drawRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color.Black, Color.Black.copy(alpha = 0.9f), Color.Transparent),
-                        ),
-                        blendMode = BlendMode.DstIn,
-                    )
-                },
-            radius = 14f,
-            overlayColor = android.graphics.Color.argb(18, 12, 12, 20),
+                .height(116.dp),
+            top = true,
         )
         SoftGlassTopBar(
             title = "Library",
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        LiveBlurOverlay(
+        FadedGlassOverlay(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .height(124.dp)
-                .navigationBarsPadding()
-                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                .drawWithContent {
-                    drawContent()
-                    // Fade in from the gallery, keeping the strongest glass around the bottom controls.
-                    drawRect(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.82f), Color.Black),
-                        ),
-                        blendMode = BlendMode.DstIn,
-                    )
-                },
-            radius = 14f,
-            overlayColor = android.graphics.Color.argb(22, 18, 18, 26),
+                .navigationBarsPadding(),
+            top = false,
         )
         SoftGlassBottomBar(
             selectedIndex = selectedTab,
@@ -234,36 +199,29 @@ fun GalleryScreen() {
 
 
 @Composable
-private fun LiveBlurOverlay(
+private fun FadedGlassOverlay(
     modifier: Modifier = Modifier,
-    radius: Float,
-    overlayColor: Int,
+    top: Boolean,
 ) {
-    val context = LocalContext.current
-    AndroidView(
-        modifier = modifier,
-        factory = { viewContext ->
-            BlurView(viewContext).apply {
-                setOverlayColor(overlayColor)
-                val activity = viewContext.findActivity()
-                val root = activity?.window?.decorView?.findViewById<ViewGroup>(android.R.id.content)
-                if (root != null) {
-                    setupWith(root)
-                        .setFrameClearDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
-                        .setBlurRadius(radius)
-                        .setBlurAutoUpdate(true)
-                }
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            }
-        },
-        update = { it.setOverlayColor(overlayColor) },
+    // Cheap GPU-friendly gradient gives the iOS Photos-style fade without a live blur pass.
+    val colors = if (top) {
+        listOf(
+            Color(0xA60C0C14),
+            Color(0x680C0C14),
+            Color(0x280C0C14),
+            Color.Transparent,
+        )
+    } else {
+        listOf(
+            Color.Transparent,
+            Color(0x240C0C14),
+            Color(0x700C0C14),
+            Color(0xA60C0C14),
+        )
+    }
+    Box(
+        modifier = modifier.background(Brush.verticalGradient(colors)),
     )
-}
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is android.content.ContextWrapper -> baseContext.findActivity()
-    else -> null
 }
 
 @Composable
@@ -421,16 +379,6 @@ private fun GlassPill(text: String) {
 
 @Composable
 private fun MediaThumb(item: MediaItem) {
-    val context = LocalContext.current
-    // BlurView captures the gallery through a software canvas. Hardware-backed
-    // Coil bitmaps cannot be drawn into that canvas, so use software bitmaps here.
-    val imageRequest = remember(item.uri) {
-        ImageRequest.Builder(context)
-            .data(item.uri)
-            .allowHardware(false)
-            .build()
-    }
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -439,7 +387,7 @@ private fun MediaThumb(item: MediaItem) {
             .background(FlowCard),
     ) {
         AsyncImage(
-            model = imageRequest,
+            model = item.uri,
             contentDescription = item.displayName,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize(),
