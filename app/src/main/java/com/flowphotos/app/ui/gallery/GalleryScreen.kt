@@ -1,8 +1,6 @@
 package com.flowphotos.app.ui.gallery
 
 import android.Manifest
-import android.graphics.RenderEffect as AndroidRenderEffect
-import android.graphics.Shader
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -47,8 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asComposeRenderEffect
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -62,6 +58,9 @@ import com.flowphotos.app.ui.theme.FlowCard
 import com.flowphotos.app.ui.theme.FlowMuted
 import com.flowphotos.app.ui.theme.FlowPrimary
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.launch
 
@@ -77,6 +76,7 @@ fun GalleryScreen() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repository = remember { MediaRepository(context) }
+    val hazeState = remember { HazeState() }
 
     val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         listOf(
@@ -159,7 +159,7 @@ fun GalleryScreen() {
                     ),
                     horizontalArrangement = Arrangement.spacedBy(3.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().hazeSource(state = hazeState),
                 ) {
                     items(media, key = { it.id }) { item ->
                         MediaThumb(item)
@@ -170,44 +170,41 @@ fun GalleryScreen() {
 
         SoftGlassTopBar(
             title = "Library",
+            hazeState = hazeState,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
         SoftGlassBottomBar(
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
+            hazeState = hazeState,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
-    }
-}
-
-private fun Modifier.frostedBlur(radius: Float = 32f): Modifier {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        this.graphicsLayer {
-            renderEffect = AndroidRenderEffect
-                .createBlurEffect(radius, radius, Shader.TileMode.CLAMP)
-                .asComposeRenderEffect()
-        }
-    } else {
-        this
     }
 }
 
 @Composable
 private fun SoftGlassTopBar(
     title: String,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier = modifier.fillMaxWidth()) {
+    Box(
+        modifier = modifier.fillMaxWidth().hazeEffect(state = hazeState) {
+            backgroundColor = Color(0x330C0C14)
+            blurRadius = 32.dp
+            noiseFactor = 0.06f
+        },
+    ) {
         Box(
             modifier = Modifier
                 .matchParentSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color(0xB80C0C14),
+                            Color(0x580C0C14),
                             TopGlassFill,
-                            Color(0x330C0C14),
+                            Color(0x140C0C14),
                         ),
                     ),
                 ),
@@ -249,6 +246,7 @@ private fun SoftGlassTopBar(
 private fun SoftGlassBottomBar(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -261,7 +259,11 @@ private fun SoftGlassBottomBar(
             modifier = Modifier
                 .padding(bottom = 12.dp)
                 .clip(RoundedCornerShape(28.dp))
-                .background(GlassFill)
+                .hazeEffect(state = hazeState) {
+                    backgroundColor = GlassFill
+                    blurRadius = 30.dp
+                    noiseFactor = 0.06f
+                }
                 .border(1.dp, GlassBorder, RoundedCornerShape(28.dp)),
         ) {
             Row(
