@@ -65,10 +65,10 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.launch
 
 // Translucent glass surfaces let the gallery show through beneath the controls.
-private val GlassFill = Color(0x6612121A)
+private val GlassFill = Color(0x4212121A)
 private val GlassBorder = Color(0x40FFFFFF)
 private val GlassHighlight = Color(0x22FFFFFF)
-private val TopGlassFill = Color(0x660C0C14)
+private val TopGlassFill = Color(0x420C0C14)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -149,7 +149,10 @@ fun GalleryScreen() {
             }
 
             else -> {
-                LazyVerticalGrid(
+                Box(
+                    modifier = Modifier.fillMaxSize().hazeSource(state = hazeState),
+                ) {
+                    LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 110.dp),
                     contentPadding = PaddingValues(
                         start = 8.dp,
@@ -159,10 +162,11 @@ fun GalleryScreen() {
                     ),
                     horizontalArrangement = Arrangement.spacedBy(3.dp),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
-                    modifier = Modifier.fillMaxSize().hazeSource(state = hazeState),
-                ) {
-                    items(media, key = { it.id }) { item ->
-                        MediaThumb(item)
+                    modifier = Modifier.fillMaxSize(),
+                    ) {
+                        items(media, key = { it.id }) { item ->
+                            MediaThumb(item)
+                        }
                     }
                 }
             }
@@ -191,8 +195,8 @@ private fun SoftGlassTopBar(
 ) {
     Box(
         modifier = modifier.fillMaxWidth().hazeEffect(state = hazeState) {
-            backgroundColor = Color(0x330C0C14)
-            blurRadius = 32.dp
+            backgroundColor = Color(0x1A0C0C14)
+            blurRadius = 48.dp
             noiseFactor = 0.06f
         },
     ) {
@@ -261,7 +265,7 @@ private fun SoftGlassBottomBar(
                 .clip(RoundedCornerShape(28.dp))
                 .hazeEffect(state = hazeState) {
                     backgroundColor = GlassFill
-                    blurRadius = 30.dp
+                    blurRadius = 44.dp
                     noiseFactor = 0.06f
                 }
                 .border(1.dp, GlassBorder, RoundedCornerShape(28.dp)),
