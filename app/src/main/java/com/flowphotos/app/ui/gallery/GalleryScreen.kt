@@ -65,10 +65,11 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import kotlinx.coroutines.launch
 
-private val GlassFill = Color(0x9912121A)
-private val GlassBorder = Color(0x33FFFFFF)
-private val GlassHighlight = Color(0x18FFFFFF)
-private val TopGlassFill = Color(0xCC0C0C14)
+// Translucent glass surfaces let the gallery show through beneath the controls.
+private val GlassFill = Color(0x6612121A)
+private val GlassBorder = Color(0x40FFFFFF)
+private val GlassHighlight = Color(0x22FFFFFF)
+private val TopGlassFill = Color(0x660C0C14)
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -201,8 +202,15 @@ private fun SoftGlassTopBar(
         Box(
             modifier = Modifier
                 .matchParentSize()
-                .frostedBlur(36f)
-                .background(TopGlassFill),
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xB80C0C14),
+                            TopGlassFill,
+                            Color(0x330C0C14),
+                        ),
+                    ),
+                ),
         )
 
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -253,7 +261,6 @@ private fun SoftGlassBottomBar(
             modifier = Modifier
                 .padding(bottom = 12.dp)
                 .clip(RoundedCornerShape(28.dp))
-                .frostedBlur(28f)
                 .background(GlassFill)
                 .border(1.dp, GlassBorder, RoundedCornerShape(28.dp)),
         ) {
