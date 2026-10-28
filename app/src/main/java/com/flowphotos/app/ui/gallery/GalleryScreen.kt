@@ -43,6 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.drawscope.drawRect
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -176,13 +181,50 @@ fun GalleryScreen() {
             }
         }
 
-        LiveBlurOverlay(modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth().height(84.dp), radius = 12f, overlayColor = android.graphics.Color.argb(34, 12, 12, 20))
+        LiveBlurOverlay(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(116.dp)
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    // Keep the blur strongest behind the status/title area, then fade it into the photos.
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Black, Color.Black.copy(alpha = 0.9f), Color.Transparent),
+                        ),
+                        blendMode = BlendMode.DstIn,
+                    )
+                },
+            radius = 14f,
+            overlayColor = android.graphics.Color.argb(18, 12, 12, 20),
+        )
         SoftGlassTopBar(
             title = "Library",
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        LiveBlurOverlay(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(84.dp).navigationBarsPadding(), radius = 12f, overlayColor = android.graphics.Color.argb(38, 18, 18, 26))
+        LiveBlurOverlay(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(124.dp)
+                .navigationBarsPadding()
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    // Fade in from the gallery, keeping the strongest glass around the bottom controls.
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.82f), Color.Black),
+                        ),
+                        blendMode = BlendMode.DstIn,
+                    )
+                },
+            radius = 14f,
+            overlayColor = android.graphics.Color.argb(22, 18, 18, 26),
+        )
         SoftGlassBottomBar(
             selectedIndex = selectedTab,
             onSelect = { selectedTab = it },
